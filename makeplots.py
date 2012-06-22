@@ -64,6 +64,8 @@ def plotstuff(virarray, time):
 	relent = [[] for year in years[0:-1]]
 	sel = [[] for year in years[0:-1]]
 
+	Nlist = []
+
 	for year1 in years:
 		for year2 in years:
 			if years.index(year2) == years.index(year1) + 1:
@@ -78,17 +80,19 @@ def plotstuff(virarray, time):
 						xent.append(0.0)
 
 				N = len(virarray[i+1])
+				Nlist.append(N)
 				print N
+				#create arrays of relative entropy, probability, and binary variable indicating selection. 
+				#arrays iterate over amino acid position. i = year in which samples collected
 				relent[i] = np.array(xent,dtype=float)
-				prob[i] = np.exp(N*np.array(xent,dtype=float))
+				prob[i] = np.exp(-1.0*N*np.array(xent,dtype=float))
 				sel[i] = np.less_equal(prob[i],0.001)
 			
 	print "\n"
-
-
+	
 	print "Generating figures"
-	sites = range(588)
 
+	#Plots all sites under selection
 	plt.clf()
 	plt.subplots_adjust(bottom=0)
 	plt.imshow(sel,interpolation='nearest', cmap=plt.cm.Reds,aspect='auto')
@@ -96,9 +100,10 @@ def plotstuff(virarray, time):
 	plt.savefig("heatmap.png",bbox_inches='tight',dpi=100)
 
 
+	sites = range(588)
+	#Plots Probability of Neutral Model vs Selection
 	plt.clf()
 	plt.subplots_adjust(bottom=-0.5)
-
 	for i in range(len(years)-1):
 		ax = plt.subplot(str(511+i))
 		ax.set_yscale('log')
@@ -106,19 +111,44 @@ def plotstuff(virarray, time):
 	plt.savefig("prob.png",bbox_inches='tight',dpi=100)
 
 
+	#Plots Relative Entropy vs Selection
 	plt.clf()
 	plt.subplots_adjust(bottom=-0.5)
-
 	for i in range(len(years)-1):
 		ax = plt.subplot(str(511+i))
 		ax.set_yscale('linear')
 		ax.plot(sites, relent[i], label=years[i])
-		ax.plot(sites, (np.log(0.01)/len(virarray[i+1]))*np.ones(588))
-		ax.plot(sites, (np.log(0.001)/len(virarray[i+1]))*np.ones(588))
+		ax.plot(sites, (-np.log(0.01)/len(virarray[i+1]))*np.ones(588))
+		ax.plot(sites, (-np.log(0.001)/len(virarray[i+1]))*np.ones(588))
 	plt.savefig("relent.png",bbox_inches='tight',dpi=100)
+
+
+	#Plots average relative entropy vs selection
+	minN = min(Nlist)
+	mean_relent = [np.mean(word) for word in zip(*relent)]
+	plt.clf()
+	plt.subplots_adjust(bottom=0)
+	ax = plt.subplot(111)
+	ax.set_yscale('linear')
+	ax.plot(sites, mean_relent, label=years[i])
+	ax.plot(sites, (-np.log(0.01)/minN)*np.ones(588))
+	ax.plot(sites, (-np.log(0.001)/minN)*np.ones(588))
+	plt.savefig("mean_relent.png",bbox_inches='tight',dpi=100)
+
+
+	#Plots average probability of neutral model vs selection
+	mean_prob = [np.mean(word) for word in zip(*prob)]
+	plt.clf()
+	plt.subplots_adjust(bottom=0)
+	ax = plt.subplot(111)
+	ax.set_yscale('log')
+	ax.plot(sites, np.array(mean_prob,dtype=float), label=years[i])
+	plt.savefig("mean_prob.png",bbox_inches='tight',dpi=100)
 
 	print "Done"
 
+
+	
 
 from Bio import Phylo
 tree = Phylo.read('egyptH5NHA.phy_phyml_tree.txt', 'newick')

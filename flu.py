@@ -39,7 +39,7 @@ def KLdivergence(vec1,vec2):
 	xent = 0.0
 	for p,q in zip(vec1,vec2):
 		if not (p == 0):
-			xent = xent - p*np.log(p/q)
+			xent = xent + p*np.log(p/q)
 	return xent
 
 
